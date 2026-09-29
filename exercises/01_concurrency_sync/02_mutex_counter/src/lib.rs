@@ -26,7 +26,7 @@ pub fn concurrent_counter(n_threads: usize, count_per_thread: usize) -> usize {
         let counter = Arc::clone(&counter);
         handles.push(thread::spawn(move || {
             for _ in 0..count_per_thread {
-                let mut count = counter.lock().unwrap();
+                let mut count = counter.lock().unwrap(); // 返回一个保护对象
                 *count += 1;
             }
         }));
