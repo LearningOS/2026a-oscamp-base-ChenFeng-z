@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2074,
   "repository": "LearningOS/2026a-oscamp-base-ChenFeng-z",
-  "commit": "9bf6cf305f23e93bb8501815661e95b14608e849",
-  "score": 39,
+  "commit": "1222868c0df958ff1ea16068f23a491d880d09a1",
+  "score": 43,
   "totalScore": 100,
   "exercises": [
     {
@@ -72,9 +72,9 @@
     {
       "name": "atomic_counter",
       "max": 4,
-      "score": 0,
-      "status": "fail",
-      "exitCode": 101
+      "score": 4,
+      "status": "pass",
+      "exitCode": 0
     },
     {
       "name": "atomic_ordering",
@@ -176,9 +176,9 @@
     }
   ],
   "student": "ChenFeng-z",
-  "runId": "37190884934",
+  "runId": "37255066596",
   "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
