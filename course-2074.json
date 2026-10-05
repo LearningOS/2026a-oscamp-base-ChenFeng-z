@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2074,
   "repository": "LearningOS/2026a-oscamp-base-ChenFeng-z",
-  "commit": "584adb68ee22ec53318be6200ad372f86c953cc8",
-  "score": 51,
+  "commit": "976c6528674d2ac47d4e813bd35d2330df46ffb5",
+  "score": 55,
   "totalScore": 100,
   "exercises": [
     {
@@ -93,9 +93,9 @@
     {
       "name": "spinlock_guard",
       "max": 4,
-      "score": 0,
-      "status": "fail",
-      "exitCode": 101
+      "score": 4,
+      "status": "pass",
+      "exitCode": 0
     },
     {
       "name": "rwlock",
@@ -176,9 +176,9 @@
     }
   ],
   "student": "ChenFeng-z",
-  "runId": "37257550144",
+  "runId": "37324044735",
   "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
