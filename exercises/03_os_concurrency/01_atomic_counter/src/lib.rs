@@ -24,6 +24,7 @@ impl AtomicCounter {
     /// Atomically increments by 1, returns the value **before** increment.
     ///
     /// Hint: use `fetch_add` with `Ordering::Relaxed`
+    /// Relaxed 是“只保证原子性”，不是“允许计数出错”
     pub fn increment(&self) -> u64 {
         // TODO
         self.value.fetch_add(1, Ordering::Relaxed)
