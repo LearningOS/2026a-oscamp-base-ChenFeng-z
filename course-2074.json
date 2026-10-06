@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2074,
   "repository": "LearningOS/2026a-oscamp-base-ChenFeng-z",
-  "commit": "9fa751b4d9644a7cb85d016b8e719e03aa693f75",
-  "score": 76,
+  "commit": "20ab45ee333b85ec096be06a5d0b0c1808ea75a8",
+  "score": 79,
   "totalScore": 100,
   "exercises": [
     {
@@ -128,9 +128,9 @@
     {
       "name": "tokio_tasks",
       "max": 3,
-      "score": 0,
-      "status": "fail",
-      "exitCode": 101
+      "score": 3,
+      "status": "pass",
+      "exitCode": 0
     },
     {
       "name": "async_channel_ex",
@@ -176,9 +176,9 @@
     }
   ],
   "student": "ChenFeng-z",
-  "runId": "37440723051",
+  "runId": "37441867523",
   "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
