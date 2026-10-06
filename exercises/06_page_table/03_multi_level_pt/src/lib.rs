@@ -103,7 +103,8 @@ impl Sv39PageTable {
     /// 提示：右移 (12 + level * 9) 位，然后与 0x1FF 做掩码。
     pub fn extract_vpn(va: u64, level: usize) -> usize {
         // TODO: 从虚拟地址中提取指定级别的 VPN 索引
-        todo!()
+        assert!(level < 3, "页表级别必须为 0、1 或 2");
+        ((va >> (12 + level * 9)) & 0x1FF) as usize
     }
 
     /// 建立从虚拟页到物理页的映射（4KB 页）。
@@ -119,7 +120,34 @@ impl Sv39PageTable {
         // 对于中间层级（level 2 和 level 1），如果对应 VPN 的页表项（PTE）无效（PTE_V == 0），
         // 则需要分配一个新的页表节点（使用 alloc_node），并将新节点的 PPN 写入当前 PTE（仅设置 PTE_V 标志）。
         // 最后在 level 0 的 PTE 中写入目标物理页号（pa >> 12）和 flags。
-        todo!()
+        let mut current_ppn = self.root_ppn;
+
+        // 第 2、1 级页表项指向下一级页表，而不是目标数据页。
+        for level in (1..=2).rev() {
+            let index = Self::extract_vpn(va, level);
+            let pte = self.nodes.get(&current_ppn).expect("页表节点不存在").entries[index];
+
+            if pte & PTE_V == 0 {
+                let child_ppn = self.alloc_node();
+                self.nodes.get_mut(&current_ppn).unwrap().entries[index] =
+                    (child_ppn << PPN_SHIFT) | PTE_V;
+                current_ppn = child_ppn;
+            } else {
+                // 大页叶子项不能当作下一级页表来使用。
+                assert_eq!(
+                    pte & (PTE_R | PTE_W | PTE_X),
+                    0,
+                    "不能直接在已有大页映射内部建立普通页映射"
+                );
+                current_ppn = pte >> PPN_SHIFT;
+            }
+        }
+
+        let index = Self::extract_vpn(va, 0);
+        // 右移 12 位去掉物理地址的页内偏移，实现向下对齐。
+        let ppn = pa >> 12;
+        self.nodes.get_mut(&current_ppn).expect("页表节点不存在").entries[index] =
+            (ppn << PPN_SHIFT) | flags;
     }
 
     /// 遍历三级页表，将虚拟地址翻译为物理地址。
@@ -141,7 +169,43 @@ impl Sv39PageTable {
         // 如果 PTE 是叶节点（即 R、W、X 标志位中有至少一个被置位），则可以直接使用该 PTE 中的物理页号（PPN）计算最终的物理地址。
         // 否则，该 PTE 指向下一级页表节点，继续遍历下一级。
         // 遍历到 level 0 时，PTE 必须是叶节点。
-        todo!()
+        let mut current_ppn = self.root_ppn;
+
+        for level in (0..=2).rev() {
+            let node = match self.nodes.get(&current_ppn) {
+                Some(node) => node,
+                None => return TranslateResult::PageFault,
+            };
+            let pte = node.entries[Self::extract_vpn(va, level)];
+
+            if pte & PTE_V == 0 {
+                return TranslateResult::PageFault;
+            }
+
+            let ppn = pte >> PPN_SHIFT;
+            if pte & (PTE_R | PTE_W | PTE_X) != 0 {
+                // 第 0 级：4KB 页，偏移 12 位。
+                // 第 1 级：2MB 页，偏移 21 位。
+                // 第 2 级：1GB 页，偏移 30 位。
+                let offset_bits = 12 + level * 9;
+                let offset_mask = (1u64 << offset_bits) - 1;
+                let base_pa = ppn << 12;
+
+                // 大页的物理起始地址必须按对应页大小对齐。
+                if base_pa & offset_mask != 0 {
+                    return TranslateResult::PageFault;
+                }
+
+                return TranslateResult::Ok(base_pa | (va & offset_mask));
+            }
+            // 第 0 级已是最后一级，不能再指向下一级页表。
+            if level == 0 {
+                return TranslateResult::PageFault;
+            }
+            current_ppn = ppn;
+        }
+
+        TranslateResult::PageFault
     }
 
     /// 建立大页映射（2MB superpage，在 level 1 设叶子 PTE）。
@@ -160,8 +224,34 @@ impl Sv39PageTable {
         // 你需要在 level 2 找到或创建中间页表节点，然后在 level 1 写入叶子 PTE。
         // 注意大页的物理页号计算方式与普通页相同（pa >> 12），
         // 但翻译时 offset 包含虚拟地址的低 21 位（VPN[0] 部分 + 12 位页内偏移）。
-        todo!()
+        let mega_size: u64 = (PAGE_SIZE * PT_ENTRIES) as u64; // 2MB
+        assert_eq!(va % mega_size, 0, "虚拟地址必须按 2MB 对齐");
+        assert_eq!(pa % mega_size, 0, "物理地址必须按 2MB 对齐");
+
+        let root_index = Self::extract_vpn(va, 2);
+        let root_pte = self.nodes.get(&self.root_ppn).unwrap().entries[root_index];
+
+        let level1_ppn = if root_pte & PTE_V == 0 {
+            let child_ppn = self.alloc_node();
+            self.nodes.get_mut(&self.root_ppn).unwrap().entries[root_index] =
+                (child_ppn << PPN_SHIFT) | PTE_V;
+            child_ppn
+        } else {
+            assert_eq!(
+                root_pte & (PTE_R | PTE_W | PTE_X),
+                0,
+                "不能直接在已有 1GB 大页映射内部建立 2MB 映射"
+            );
+            root_pte >> PPN_SHIFT
+        };
+
+        let index = Self::extract_vpn(va, 1);
+        let ppn = pa >> 12;
+        // 在第 1 级直接写入目标数据页的映射，不再建立第 0 级节点。
+        self.nodes.get_mut(&level1_ppn).expect("页表节点不存在").entries[index] =
+            (ppn << PPN_SHIFT) | flags;
     }
+    
 }
 
 impl Default for Sv39PageTable {
