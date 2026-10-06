@@ -2,8 +2,8 @@
   "schema": 1,
   "courseId": 2074,
   "repository": "LearningOS/2026a-oscamp-base-ChenFeng-z",
-  "commit": "5c07b598c7c45916178ec7787e3b0018466c7b46",
-  "score": 93,
+  "commit": "42f4ccf50394ecd6eaf6653110707abec97ecbf9",
+  "score": 97,
   "totalScore": 100,
   "exercises": [
     {
@@ -163,9 +163,9 @@
     {
       "name": "multi_level_pt",
       "max": 4,
-      "score": 0,
-      "status": "fail",
-      "exitCode": 101
+      "score": 4,
+      "status": "pass",
+      "exitCode": 0
     },
     {
       "name": "tlb_sim",
@@ -176,9 +176,9 @@
     }
   ],
   "student": "ChenFeng-z",
-  "runId": "37470415384",
+  "runId": "37472258511",
   "runAttempt": "1",
   "upload": {
-    "status": "accepted"
+    "status": "pending"
   }
 }
